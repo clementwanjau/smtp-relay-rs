@@ -5,12 +5,14 @@ version = "0.1.0"
 authors = ["Marirs <marirs@gmail.com>"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 threadpool = "1.7.1"
 num_cpus = "1.0"
 clap = "2.32.0"
-lettre = {version = "=0.10.0-alpha.1", default_features = false, features=["builder", "native-tls", "smtp-transport"]}
+lettre = {version = "0.10.1", features=["builder", "native-tls", "smtp-transport"]}
 log = "0.4.17"
 simple_logger = "2.2.0"
+serde = "1.0.140"
+serde_derive = "1.0.140"
+serde_yaml = "0.8.26"

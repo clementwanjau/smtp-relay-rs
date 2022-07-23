@@ -1,0 +1,15 @@
+# The host and port that this server listens on.
+listener:
+  host: localhost
+  port: 2525
+
+# The outgoing SMTP server. Or rather the SMTP server to send through. 
+outgoing_smtp:
+  # The host
+  host: smtp.example.com
+  # The TLS SMTP port
+  port: 587
+  # The username on the SMTP server
+  username: username@domain.com
+  # The password to authenticate on the SMTP server
+  password: password

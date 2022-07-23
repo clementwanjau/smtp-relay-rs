@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::io::{BufRead, Write};
-use std::rc::Rc;
 use std::str::FromStr;
-use lettre::{Address, Envelope, SmtpTransport, Transport};
-use lettre::transport::smtp;
+use lettre::{Address, SmtpTransport, Transport};
+use lettre::address::Envelope;
+use lettre::message::Mailbox;
+use log::info;
 
 // Client commands
 const HELO_START: &str = "HELO ";
@@ -194,16 +195,18 @@ impl Connection {
 }
 
 pub fn relay_email(smtp: &mut SmtpTransport, message: &Message) {
-    let content = message.get_data().into_bytes();
-    let sender = Address::from_str(message.get_sender())
-        .expect("Malformed sender provided.");
-    let recipients = message.get_recipients().iter().map(|x| Address::from_str(x)
-        .expect("Malformed recipients provided.")).collect::<Vec<Address>>();
+    for recipient in message.recipients.iter() {
+        let email = lettre::message::Message::builder()
+            .from(message.get_sender().parse().unwrap())
+            .to(recipient.parse().unwrap())
+            .body(message.get_data())
+            .unwrap();
 
-    let envelope = Envelope::new(Some(sender), recipients).expect("Failed to build envelope");
-    
-    smtp.send_raw(&envelope, &content)
-        .unwrap_or_else(|e| panic!("Failed to send the message {:?}.", e));
+        // Send the email via remote relay
+        smtp.send(&email)
+            .unwrap_or_else(|e| panic!("Could not send the mail to {} due to {}", message.get_recipients().join(","), e));
+        info!("*** SENT THE MAIL TO '{}'.", recipient);
+    }
 }
 
 #[cfg(test)]
