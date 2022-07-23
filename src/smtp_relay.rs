@@ -1,4 +1,6 @@
-use std::io::{BufRead, Error, Write};
+use std::error::Error;
+use std::io::{BufRead, Write};
+use std::rc::Rc;
 use std::str::FromStr;
 use lettre::{Address, Envelope, SmtpTransport, Transport};
 use lettre::transport::smtp;
@@ -74,7 +76,7 @@ impl Connection {
     }
 
     /// Handle an incoming connection
-    pub fn handle(reader: &mut impl BufRead, writer: &mut impl Write) -> Result<Connection, Error> {
+    pub fn handle(reader: &mut impl BufRead, writer: &mut impl Write) -> Result<Connection, Box<dyn Error>> {
         let mut result = Connection::new();
 
         writeln!(writer, "{}", MSG_READY)?;
@@ -199,8 +201,6 @@ pub fn relay_email(smtp: &mut SmtpTransport, message: &Message) {
         .expect("Malformed recipients provided.")).collect::<Vec<Address>>();
 
     let envelope = Envelope::new(Some(sender), recipients).expect("Failed to build envelope");
-    println!("{:?}", envelope);
-    println!("{:?}", content);
     
     smtp.send_raw(&envelope, &content)
         .unwrap_or_else(|e| panic!("Failed to send the message {:?}.", e));
@@ -241,7 +241,7 @@ mod tests {
 
         assert_eq!(
             response,
-            "220 ready\n\
+            "220 Message ready\n\
              250 OK\n\
              250 OK\n\
              250 OK\n\

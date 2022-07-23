@@ -6,5 +6,4 @@ This server listens for the SMTP emails and relays them.
 
 ### Usage
 
-```smtprelay-s -h <host> -p <port>```
-
+```smtprelay-rs -h <host> -p <port>```
