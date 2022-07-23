@@ -5,9 +5,12 @@ extern crate threadpool;
 use clap::{App, Arg};
 use std::io::BufReader;
 use std::net::{TcpListener, TcpStream};
+use lettre::SmtpTransport;
+use lettre::transport::smtp;
 use threadpool::ThreadPool;
+use crate::smtp_relay::{Connection, relay_email};
 
-mod smtp;
+mod smtp_relay;
 
 /// Parse the bind address from the command line arguments
 fn parse_args() -> String {
@@ -49,14 +52,21 @@ fn parse_args() -> String {
 fn handle_connection(mut stream: TcpStream) {
     let mut reader = BufReader::new(stream.try_clone().unwrap());
 
-    match smtp::Connection::handle(&mut reader, &mut stream) {
+    match Connection::handle(&mut reader, &mut stream) {
         Ok(result) => {
+            let mut smtp = SmtpTransport::relay(parse_args().as_str())
+                .expect("Failed to create SMTP client")
+                .build();
+
             println!("Sender domain: {}", result.get_sender_domain().unwrap());
             for message in result.get_messages().unwrap() {
-                // TODO: We relay the email here instead of printing it out. 
+                // TODO: We relay the email here instead of printing it out.
                 println!("Message from: {}", message.get_sender());
                 println!("To: {}", message.get_recipients().join(", "));
                 println!("{}", message.get_data());
+                
+                relay_email(&mut smtp, message);
+
             }
         }
         Err(e) => eprintln!("Error communicating with client: {}", e),
@@ -64,7 +74,7 @@ fn handle_connection(mut stream: TcpStream) {
 }
 
 fn main() {
-    let bind_address = parse_args();
+    let bind_address  = parse_args();
 
     let listener = TcpListener::bind(&bind_address)
         .unwrap_or_else(|e| panic!("Binding to {} failed: {}", &bind_address, e));

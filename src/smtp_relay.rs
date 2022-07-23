@@ -1,7 +1,7 @@
-use std::env;
 use std::io::{BufRead, Error, Write};
 use std::str::FromStr;
-use crate::smtp;
+use lettre::{Address, Envelope, SmtpTransport, Transport};
+use lettre::transport::smtp;
 
 // Client commands
 const HELO_START: &str = "HELO ";
@@ -11,7 +11,7 @@ const DATA_LINE: &str = "DATA";
 const QUIT_LINE: &str = "QUIT";
 
 // Server responses
-const MSG_READY: &str = "220 ready";
+const MSG_READY: &str = "220 Message ready";
 const MSG_OK: &str = "250 OK";
 const MSG_SEND_MESSAGE_CONTENT: &str = "354 Send message content";
 const MSG_BYE: &str = "221 Bye";
@@ -191,24 +191,19 @@ impl Connection {
     }
 }
 
-async fn relay_eml(smtp: &mut smtp::SmtpTransport, message_id: &str) {
-    let mut content = Vec::new();
+pub fn relay_email(smtp: &mut SmtpTransport, message: &Message) {
+    let content = message.get_data().into_bytes();
+    let sender = Address::from_str(message.get_sender())
+        .expect("Malformed sender provided.");
+    let recipients = message.get_recipients().iter().map(|x| Address::from_str(x)
+        .expect("Malformed recipients provided.")).collect::<Vec<Address>>();
+
+    let envelope = Envelope::new(Some(sender), recipients).expect("Failed to build envelope");
+    println!("{:?}", envelope);
+    println!("{:?}", content);
     
-    let relay_from = lettre::Address::from_str(
-        &env::var("RELAY_ENVELOPE_FROM").expect("Missing $RELAY_ENVELOPE_FROM"),
-    )
-        .expect("Malformed $RELAY_ENVELOPE_FROM");
-
-    let relay_to = lettre::Address::from_str(
-        &env::var("RELAY_ENVELOPE_TO").expect("Missing $RELAY_ENVELOPE_TO"),
-    )
-        .expect("Malformed $RELAY_ENVELOPE_FROM");
-
-    let envelope =
-        lettre::Envelope::new(Some(relay_from), vec![relay_to]).expect("Failed to build envelope");
-
     smtp.send_raw(&envelope, &content)
-        .unwrap_or_else(|_| panic!("Failed to send {}", message_id));
+        .unwrap_or_else(|e| panic!("Failed to send the message {:?}.", e));
 }
 
 #[cfg(test)]
