@@ -1,9 +1,6 @@
 use std::error::Error;
 use std::io::{BufRead, Write};
-use std::str::FromStr;
-use lettre::{Address, SmtpTransport, Transport};
-use lettre::address::Envelope;
-use lettre::message::Mailbox;
+use lettre::{SmtpTransport, Transport};
 use log::info;
 
 // Client commands
@@ -24,7 +21,7 @@ const MSG_SYNTAX_ERROR: &str = "500 unexpected line";
 pub struct Message {
     sender: String,
     recipients: Vec<String>,
-    data: Vec<String>,
+    data: Vec<String>
 }
 
 impl Message {
@@ -194,8 +191,9 @@ impl Connection {
     }
 }
 
-pub fn relay_email(smtp: &mut SmtpTransport, message: &Message) {
+pub async fn relay_email(smtp_transport: &mut SmtpTransport, message: &Message) {
     for recipient in message.recipients.iter() {
+        // Instead of using an smtp server we use AWS SES 
         let email = lettre::message::Message::builder()
             .from(message.get_sender().parse().unwrap())
             .to(recipient.parse().unwrap())
@@ -203,7 +201,7 @@ pub fn relay_email(smtp: &mut SmtpTransport, message: &Message) {
             .unwrap();
 
         // Send the email via remote relay
-        smtp.send(&email)
+        smtp_transport.send(&email)
             .unwrap_or_else(|e| panic!("Could not send the mail to {} due to {}", message.get_recipients().join(","), e));
         info!("*** SENT THE MAIL TO '{}'.", recipient);
     }
