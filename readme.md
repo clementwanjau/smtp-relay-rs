@@ -14,8 +14,8 @@ This server listens for the SMTP emails and relays them.
     ```> nc localhost 2525 <<EOT ```
 - Construct a basic test email.
     ```
-    > HELO localhost
-    > MAIL FROM: test@localhost.com
+    > HELO yourdomain.com
+    > MAIL FROM: test@yourdomain.com
     > RCPT TO: user@example.com
     > DATA
     > It works!
