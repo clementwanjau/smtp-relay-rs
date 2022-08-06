@@ -10,6 +10,8 @@ This server listens for the SMTP emails and relays them.
 
     ```> smtprelay-rs -c <CONFIG_PATH>```
 - Send mail to the server. You could use any tool to send the mail to the listening port.
+## Example 1
+A sample python snippet.
 ```python
     #!/usr/bin/env python
     import socket
@@ -33,7 +35,7 @@ This server listens for the SMTP emails and relays them.
     s.close()
 ```
 
-## Example
+## Example 2
 - Use netcat to send mail to the server. Use the host and port used in the listener section of the config.
 
     ```> nc localhost 2525 <<EOT ```
